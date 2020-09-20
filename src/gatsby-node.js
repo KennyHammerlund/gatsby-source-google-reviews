@@ -1,15 +1,21 @@
+const axios = require("axios");
 
-const axios = require('axios');
-
-exports.sourceNodes = async ({ actions, createNodeId, createContentDigest }, { placeId, apiKey }) => {
+exports.sourceNodes = async (
+  { actions, createNodeId, createContentDigest },
+  { placeId, apiKey, langs = [] }
+) => {
   const { createNode } = actions;
 
-  if (!apiKey || typeof apiKey !== 'string') {
-    throw new Error("You must supply a valid API Key from Scale Serp. Visit https://scaleserp.com/ for more information.");
+  if (!apiKey || typeof apiKey !== "string") {
+    throw new Error(
+      "You must supply a valid API Key from Scale Serp. Visit https://scaleserp.com/ for more information."
+    );
   }
 
-  if (!placeId || typeof placeId !== 'string') {
-    throw new Error("You must supply a valid place id from Google. You can find your place id at https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder.");
+  if (!placeId || typeof placeId !== "string") {
+    throw new Error(
+      "You must supply a valid place id from Google. You can find your place id at https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder."
+    );
   }
 
   const params = {
@@ -18,28 +24,39 @@ exports.sourceNodes = async ({ actions, createNodeId, createContentDigest }, { p
     place_id: placeId,
   };
 
-  axios.get('https://api.scaleserp.com/search', { params })
-  .then(response => {
+  const promises = langs.length
+    ? langs.map((lang) =>
+        axios.get("https://api.scaleserp.com/search", {
+          params: { ...params, hl: lang },
+        })
+      )
+    : [axios.get("https://api.scaleserp.com/search", { params })];
+
+  const responses = await Promise.all(promises).catch((error) => {
+    throw new Error(`Error fetching results from ScaleSerp API: ${error}`);
+  });
+
+  for (let i = 0; i < langs.length; i++) {
+    const response = responses[i];
+    const lang = langs[i];
+
     const reviews = response.data.place_reviews_results;
 
-    reviews.forEach(review => {
-      const nodeContent = JSON.stringify(review);
+    reviews.forEach((review) => {
+      const reviewWithLang = { ...review, lang };
+      const nodeContent = JSON.stringify(reviewWithLang);
       const nodeMeta = {
-        id: createNodeId(`google-review-${review.source}`),
+        id: createNodeId(`google-review-${lang}-${review.source}`),
         parent: null,
         children: [],
         internal: {
           type: `GoogleReview`,
           content: nodeContent,
-          contentDigest: createContentDigest(review)
-        }
+          contentDigest: createContentDigest(reviewWithLang),
+        },
       };
-      const node = Object.assign({}, review, nodeMeta);
+      const node = Object.assign({}, reviewWithLang, nodeMeta);
       createNode(node);
     });
-
-    return;
-  }).catch(error => {
-    throw new Error(`Error fetching results from ScaleSerp API: ${error}`);
-  });
+  }
 };

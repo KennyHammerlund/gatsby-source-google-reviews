@@ -1,8 +1,8 @@
 {
-  "name": "gatsby-source-google-reviews",
+  "name": "@jortizsao/gatsby-source-google-reviews",
   "description": "Gatsby source plugin to add Google Reviews.",
-  "version": "0.0.7",
-  "author": "Kieran White <kwhite@myself.com>",
+  "version": "0.1.0",
+  "author": "Javier Ortiz <javier.ortizsaorin@gmail.com>",
   "dependencies": {
     "@babel/runtime": "^7.8.7",
     "axios": "^0.19.2",
@@ -15,7 +15,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/kieranwt94/gatsby-source-google-reviews"
+    "url": "https://github.com/jortizsao/gatsby-source-google-reviews"
   },
   "devDependencies": {
     "@babel/cli": "^7.8.4",
