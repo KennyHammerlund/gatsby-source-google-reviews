@@ -2,9 +2,13 @@ const axios = require("axios");
 
 exports.sourceNodes = async (
   { actions, createNodeId, createContentDigest },
-  { placeId, apiKey, langs = [] }
+  { placeId, apiKey, langs = [], isEnabled }
 ) => {
   const { createNode } = actions;
+
+  if (!isEnabled) {
+    return;
+  }
 
   if (!apiKey || typeof apiKey !== "string") {
     throw new Error(
@@ -59,4 +63,23 @@ exports.sourceNodes = async (
       createNode(node);
     });
   }
+};
+
+exports.createSchemaCustomization = ({ actions }, { isEnabled }) => {
+  if (isEnabled) {
+    return;
+  }
+
+  const { createTypes } = actions;
+  const typeDefs = `
+    type GoogleReview implements Node @dontInfer {
+      rating: Int
+      position: Int
+      body: String
+      source: String
+      lang: String
+    }
+  `;
+
+  createTypes(typeDefs);
 };
